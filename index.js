@@ -52,6 +52,7 @@ async function run() {
         const usersCollection = client.db('Body-Build-House').collection('users');
         const classCollection = client.db('Body-Build-House').collection('class');
         const trainerCollection = client.db('Body-Build-House').collection('trainer');
+        const paymentCollection = client.db('Body-Build-House').collection('payment');
 
         app.post('/users', async (req, res) => {
             const userInfo = req.body;
@@ -66,6 +67,14 @@ async function run() {
         app.get('/user', async (req, res) => {
             const result = await usersCollection.find().toArray();
 
+            res.send(result);
+        })
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            console.log(email)
+            const query = { email }
+            console.log(query)
+            const result = await usersCollection.findOne(query);
             res.send(result);
         })
 
@@ -85,6 +94,29 @@ async function run() {
             const result = await trainerCollection.findOne(query);
             res.send(result);
         })
+
+        // payment
+        app.post('/create-payment-intent', verifyToken, async (req, res) => {
+            const { price } = req.body;
+            const amount = parseInt(price * 100);
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+
+        })
+
+        app.post('/payment', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+            res.send(result);
+        })
+
+
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
