@@ -52,6 +52,7 @@ async function run() {
         const usersCollection = client.db('Body-Build-House').collection('users');
         const classCollection = client.db('Body-Build-House').collection('class');
         const trainerCollection = client.db('Body-Build-House').collection('trainer');
+        const trainerRegisterCollection = client.db('Body-Build-House').collection('trainerRegister');
         const paymentCollection = client.db('Body-Build-House').collection('payment');
 
         app.post('/users', async (req, res) => {
@@ -84,6 +85,16 @@ async function run() {
             res.send(result);
         })
 
+        // trainer registration
+        app.post('/trainer-register', async (req, res) => {
+            const userInfo = req.body;
+
+            const result = await trainerRegisterCollection.insertOne(userInfo);
+
+            res.send(result)
+        })
+
+        // trainer 
         app.get('/trainer', async (req, res) => {
             const result = await trainerCollection.find().toArray();
             res.send(result);
