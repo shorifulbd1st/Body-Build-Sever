@@ -49,11 +49,27 @@ async function run() {
             })
         }
 
+
+
         const usersCollection = client.db('Body-Build-House').collection('users');
         const classCollection = client.db('Body-Build-House').collection('class');
         const trainerCollection = client.db('Body-Build-House').collection('trainer');
         const trainerRegisterCollection = client.db('Body-Build-House').collection('trainerRegister');
         const paymentCollection = client.db('Body-Build-House').collection('payment');
+
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            const isAdmin = user?.role === 'admin';
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        }
+
+
+
 
         app.post('/users', async (req, res) => {
             const userInfo = req.body;
@@ -112,6 +128,12 @@ async function run() {
             res.send(result);
         })
 
+        app.post('/class', verifyToken, verifyAdmin, async (req, res) => {
+            const classInfo = req.body;
+            const result = await classCollection.insertOne(classInfo);
+            res.send(result);
+        })
+
         // trainer registration
         app.post('/trainer-register', async (req, res) => {
             const userInfo = req.body;
@@ -148,28 +170,26 @@ async function run() {
 
             const query = { email };
 
-            // Build the update object
             const update = {};
             if (selectClass) {
                 const selectClassArray = Array.isArray(selectClass) ? selectClass : [selectClass];
                 update.$addToSet = {
                     ...(update.$addToSet || {}),
-                    selectClass: { $each: selectClassArray }, // Add unique items to selectClass
+                    selectClass: { $each: selectClassArray },
                 };
             }
             if (slotName) {
-                const slotNameArray = Array.isArray(slotName) ? slotName : [slotName]; // Ensure slotName is an array
+                const slotNameArray = Array.isArray(slotName) ? slotName : [slotName];
                 update.$addToSet = {
                     ...(update.$addToSet || {}),
-                    slotName: { $each: slotNameArray }, // Add unique items to slotName
+                    slotName: { $each: slotNameArray },
                 };
             }
 
             if (slotTime !== undefined) {
-                update.$inc = { slotTime }; // Increment slotTime
+                update.$inc = { slotTime }; me
             }
 
-            // Update or insert the trainer document
             const result = await trainerCollection.updateOne(query, update, { upsert: true });
             res.send(result)
 
