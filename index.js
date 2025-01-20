@@ -67,9 +67,20 @@ async function run() {
         })
         app.get('/user', async (req, res) => {
             const result = await usersCollection.find().toArray();
-
             res.send(result);
         })
+        app.patch('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email };
+            const updateDoc = {
+                $set: {
+                    role: 'trainer'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
         app.get('/user/:email', async (req, res) => {
             const email = req.params.email;
             console.log(email)
@@ -78,6 +89,22 @@ async function run() {
             const result = await usersCollection.findOne(query);
             res.send(result);
         })
+
+        // admin role 
+        app.get('/user/admin/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
+                return res.send(403).send({ message: 'forbidden access' });
+            }
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            let admin = false;
+            if (user) {
+                admin = user?.role === 'admin'
+            }
+            res.send({ admin })
+        })
+
 
         app.get('/class', async (req, res) => {
             const result = await classCollection.find().toArray();
@@ -88,23 +115,85 @@ async function run() {
         // trainer registration
         app.post('/trainer-register', async (req, res) => {
             const userInfo = req.body;
-
             const result = await trainerRegisterCollection.insertOne(userInfo);
-
             res.send(result)
         })
 
+        app.get('/apply-trainers', async (req, res) => {
+            const result = await trainerRegisterCollection.find().toArray();
+            res.send(result);
+        })
+        app.get('/apply-trainers/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await trainerRegisterCollection.findOne(query);
+            res.send(result);
+        })
+        app.delete('/apply-trainers/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await trainerRegisterCollection.deleteOne(query);
+            res.send(result)
+        })
+
+
         // trainer 
+        app.post('/trainer', async (req, res) => {
+            const userInfo = req.body;
+            const result = await trainerCollection.insertOne(userInfo);
+            res.send(result)
+        })
+        app.patch('/add-slot', async (req, res) => {
+            const { email, selectClass, slotName, slotTime } = req.body;
+
+            const query = { email };
+
+            // Build the update object
+            const update = {};
+            if (selectClass) {
+                const selectClassArray = Array.isArray(selectClass) ? selectClass : [selectClass];
+                update.$addToSet = {
+                    ...(update.$addToSet || {}),
+                    selectClass: { $each: selectClassArray }, // Add unique items to selectClass
+                };
+            }
+            if (slotName) {
+                const slotNameArray = Array.isArray(slotName) ? slotName : [slotName]; // Ensure slotName is an array
+                update.$addToSet = {
+                    ...(update.$addToSet || {}),
+                    slotName: { $each: slotNameArray }, // Add unique items to slotName
+                };
+            }
+
+            if (slotTime !== undefined) {
+                update.$inc = { slotTime }; // Increment slotTime
+            }
+
+            // Update or insert the trainer document
+            const result = await trainerCollection.updateOne(query, update, { upsert: true });
+            res.send(result)
+
+
+        })
         app.get('/trainer', async (req, res) => {
             const result = await trainerCollection.find().toArray();
             res.send(result);
         })
+
         app.get('/trainer/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await trainerCollection.findOne(query);
             res.send(result);
         })
+
+        app.get('/trainer-email/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email };
+            const result = await trainerCollection.findOne(filter);
+            res.send(result);
+        })
+
 
         // payment
         app.post('/create-payment-intent', verifyToken, async (req, res) => {
