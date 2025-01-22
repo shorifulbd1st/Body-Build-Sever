@@ -127,6 +127,29 @@ async function run() {
 
             res.send(result);
         })
+        app.get('/class/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await classCollection.findOne(query);
+            res.send(result)
+        })
+        app.get('/class-name/:name', async (req, res) => {
+            const name = req.params.name;
+            const query = { className: name };
+
+            const result = await classCollection.findOne(query);
+            res.send(result)
+        })
+        app.patch('/class-update/:id', verifyToken, async (req, res) => {
+            const id = req.params.id;
+            console.log('update', id)
+            const query = { _id: new ObjectId(id) }
+            const update = {
+                $inc: { count: 1 },
+            }
+            const result = await classCollection.updateOne(query, update);
+            res.send(result);
+        })
 
         app.post('/class', verifyToken, verifyAdmin, async (req, res) => {
             const classInfo = req.body;
@@ -134,6 +157,10 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/top-class', async (req, res) => {
+            const result = await classCollection.find().sort({ count: -1 }).limit(6).toArray();
+            res.send(result)
+        })
         // trainer registration
         app.post('/trainer-register', async (req, res) => {
             const userInfo = req.body;
@@ -187,7 +214,7 @@ async function run() {
             }
 
             if (slotTime !== undefined) {
-                update.$inc = { slotTime }; me
+                update.$inc = { slotTime };
             }
 
             const result = await trainerCollection.updateOne(query, update, { upsert: true });
