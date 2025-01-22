@@ -56,6 +56,7 @@ async function run() {
         const trainerCollection = client.db('Body-Build-House').collection('trainer');
         const trainerRegisterCollection = client.db('Body-Build-House').collection('trainerRegister');
         const paymentCollection = client.db('Body-Build-House').collection('payment');
+        const forumCollection = client.db('Body-Build-House').collection('forum');
 
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
@@ -99,9 +100,9 @@ async function run() {
 
         app.get('/user/:email', async (req, res) => {
             const email = req.params.email;
-            console.log(email)
+            // console.log(email)
             const query = { email }
-            console.log(query)
+            // console.log(query)
             const result = await usersCollection.findOne(query);
             res.send(result);
         })
@@ -264,6 +265,40 @@ async function run() {
         })
 
 
+        // forumCollection
+        app.post('/addNewForum', async (req, res) => {
+            const info = req.body;
+            const result = await forumCollection.insertOne(info);
+            res.send(result);
+        })
+
+        app.get('/NewForum', async (req, res) => {
+            const result = await forumCollection.find().toArray();
+            res.send(result);
+        })
+        app.get('/top-NewForum', async (req, res) => {
+            const result = await forumCollection.find().limit(6).toArray();
+            res.send(result)
+        })
+
+        app.patch('/forum-update/:id', async (req, res) => {
+            const id = req.params.id;
+            const { like } = req.body;
+            const query = { _id: new ObjectId(id) };
+            let update = {};
+            if (like) {
+                update = {
+                    $inc: { upVote: 1 },
+                }
+            }
+            else {
+                update = {
+                    $inc: { downVote: 1 },
+                }
+            }
+            const result = await forumCollection.updateOne(query, update)
+            res.send(result)
+        })
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
