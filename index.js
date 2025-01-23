@@ -163,6 +163,24 @@ async function run() {
             const result = await classCollection.find().sort({ count: -1 }).limit(6).toArray();
             res.send(result)
         })
+
+        app.get('/class-name', async (req, res) => {
+            // http://localhost:4000/schedule?search=hello [search localhost or thunderMethod]
+            let option = {}
+            const { search } = req.query;
+            console.log(search)
+            if (search) {
+                option = { className: { $regex: search, $options: "i" } }
+            }
+            const result = await classCollection.find(option).toArray()
+            res.send(result)
+        })
+
+
+
+
+
+
         // trainer registration
         app.post('/trainer-register', async (req, res) => {
             const userInfo = req.body;
@@ -310,6 +328,7 @@ async function run() {
 
         app.post('/subscribe', async (req, res) => {
             const info = req.body;
+            console.log(info)
             const result = await SubscribeCollection.insertOne(info);
             res.send(result);
         })
