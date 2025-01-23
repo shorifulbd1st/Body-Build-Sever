@@ -57,6 +57,7 @@ async function run() {
         const trainerRegisterCollection = client.db('Body-Build-House').collection('trainerRegister');
         const paymentCollection = client.db('Body-Build-House').collection('payment');
         const forumCollection = client.db('Body-Build-House').collection('forum');
+        const SubscribeCollection = client.db('Body-Build-House').collection('Subscribe');
 
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
@@ -298,6 +299,19 @@ async function run() {
             }
             const result = await forumCollection.updateOne(query, update)
             res.send(result)
+        })
+
+        app.get('/forum-details/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await forumCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.post('/subscribe', async (req, res) => {
+            const info = req.body;
+            const result = await SubscribeCollection.insertOne(info);
+            res.send(result);
         })
 
         // Send a ping to confirm a successful connection
