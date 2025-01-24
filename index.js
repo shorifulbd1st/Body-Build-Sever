@@ -11,7 +11,11 @@ const port = process.env.PORT || 5000;
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.o3yie.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
-
+const corsOptions = {
+    origin: ['http://localhost:5173', 'https://body-build-house.web.app/',],
+    credentials: true,
+    optionalSuccessStatus: 200,
+}
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -19,9 +23,12 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
-app.use(cors());
-app.use(express.json());
+
+// app.use(cors());
+// app.use(express.json());
 app.use(morgan('dev'))
+app.use(express.json());
+app.use(cors(corsOptions));
 
 async function run() {
     try {
@@ -168,7 +175,7 @@ async function run() {
             // http://localhost:4000/schedule?search=hello [search localhost or thunderMethod]
             let option = {}
             const { search } = req.query;
-            console.log(search)
+            // console.log(search)
             if (search) {
                 option = { className: { $regex: search, $options: "i" } }
             }
@@ -176,16 +183,18 @@ async function run() {
             res.send(result)
         })
 
-
-
-
-
-
         // trainer registration
         app.post('/trainer-register', async (req, res) => {
             const userInfo = req.body;
             const result = await trainerRegisterCollection.insertOne(userInfo);
             res.send(result)
+        })
+
+        app.get('/trainer-register/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const result = await trainerRegisterCollection.findOne(query);
+            res.send(result);
         })
 
         app.get('/apply-trainers', async (req, res) => {
