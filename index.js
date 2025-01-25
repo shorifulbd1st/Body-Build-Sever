@@ -77,9 +77,6 @@ async function run() {
             next();
         }
 
-
-
-
         app.post('/users', async (req, res) => {
             const userInfo = req.body;
             const filter = { email: userInfo.email }
@@ -283,6 +280,24 @@ async function run() {
             const result = await trainerCollection.findOne(filter);
             res.send(result);
         })
+        app.delete('/trainer/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const trainer = await trainerCollection.findOne(query);
+            // console.log(trainer)
+            const email = trainer.email;
+            const query1 = { email }
+            // console.log('email', email)
+            // const user = await usersCollection.findOne(query1);
+            // console.log('user', user)
+            const result = await trainerCollection.deleteOne(query);
+            const updateDoc = {
+                $set: { role: 'member' }
+            }
+            const updateResult = await usersCollection.updateOne(query1, updateDoc)
+
+            res.send(result)
+        })
 
 
         // payment
@@ -351,8 +366,13 @@ async function run() {
 
         app.post('/subscribe', async (req, res) => {
             const info = req.body;
-            console.log(info)
+            // console.log(info)
             const result = await SubscribeCollection.insertOne(info);
+            res.send(result);
+        })
+
+        app.get('/subscribe', async (req, res) => {
+            const result = await SubscribeCollection.find().toArray();
             res.send(result);
         })
 
