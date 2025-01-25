@@ -130,11 +130,23 @@ async function run() {
             res.send({ admin })
         })
 
+        app.get('/all-class', async (req, res) => {
+            const query = req.query;
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+            const result = await classCollection.find().skip(page * size).limit(size).toArray();
+            res.send(result)
+        })
 
         app.get('/class', async (req, res) => {
             const result = await classCollection.find().toArray();
 
             res.send(result);
+        })
+
+        app.get('/class-page', async (req, res) => {
+            const result = await classCollection.estimatedDocumentCount();
+            res.send({ result })
         })
         app.get('/class/:id', async (req, res) => {
             const id = req.params.id;
@@ -142,6 +154,7 @@ async function run() {
             const result = await classCollection.findOne(query);
             res.send(result)
         })
+
         app.get('/class-name/:name', async (req, res) => {
             const name = req.params.name;
             const query = { className: name };
@@ -149,6 +162,7 @@ async function run() {
             const result = await classCollection.findOne(query);
             res.send(result)
         })
+
         app.patch('/class-update/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             // console.log('update', id)
