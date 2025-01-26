@@ -65,6 +65,8 @@ async function run() {
         const paymentCollection = client.db('Body-Build-House').collection('payment');
         const forumCollection = client.db('Body-Build-House').collection('forum');
         const SubscribeCollection = client.db('Body-Build-House').collection('Subscribe');
+        const reviewCollection = client.db('Body-Build-House').collection('review');
+
 
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
@@ -299,7 +301,6 @@ async function run() {
             res.send(result)
         })
 
-
         // payment
         app.post('/create-payment-intent', verifyToken, async (req, res) => {
             const { price } = req.body;
@@ -375,7 +376,22 @@ async function run() {
             const result = await SubscribeCollection.find().toArray();
             res.send(result);
         })
+        app.post('/review', async (req, res) => {
+            const info = req.body;
+            const email = info.email;
+            const filter = { email };
 
+            const user = await trainerRegisterCollection.deleteOne(filter);
+            const result = await reviewCollection.insertOne(info);
+
+            res.send(result)
+        })
+        app.get('/review/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email };
+            const result = await reviewCollection.findOne(filter);
+            res.send(result);
+        })
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
         // console.log("Pinged your deployment. You successfully connected to MongoDB!");
