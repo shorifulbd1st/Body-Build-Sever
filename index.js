@@ -322,6 +322,22 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/payment', async (req, res) => {
+
+            const result = await paymentCollection.find().toArray();
+            const result1 = await paymentCollection.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalPrice: { $sum: "$price" }
+                    }
+                }
+            ]).toArray();
+
+            // console.log("Total Price:", result1[0]?.totalPrice || 0);
+
+            res.send({ result, result1 })
+        })
 
         // forumCollection
         app.post('/addNewForum', async (req, res) => {
