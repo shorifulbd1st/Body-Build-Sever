@@ -11,8 +11,9 @@ const port = process.env.PORT || 5000;
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.o3yie.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
+
 const corsOptions = {
-    origin: ['http://localhost:5173', 'https://body-build-house.web.app/',],
+    origin: ['http://localhost:5173', 'https://body-build-house.web.app',],
     credentials: true,
     optionalSuccessStatus: 200,
 }
@@ -66,6 +67,7 @@ async function run() {
         const forumCollection = client.db('Body-Build-House').collection('forum');
         const SubscribeCollection = client.db('Body-Build-House').collection('Subscribe');
         const reviewCollection = client.db('Body-Build-House').collection('review');
+        const testimonialCollection = client.db('Body-Build-House').collection('testimonial');
 
 
         const verifyAdmin = async (req, res, next) => {
@@ -93,6 +95,7 @@ async function run() {
             const result = await usersCollection.find().toArray();
             res.send(result);
         })
+
         app.patch('/user/:email', async (req, res) => {
             const email = req.params.email;
             const filter = { email };
@@ -223,7 +226,11 @@ async function run() {
         app.delete('/apply-trainers/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
+            // const trainer = await trainerCollection.findOne(query)
+            // const email = trainer.email
+            // const query1 = { email }
             const result = await trainerRegisterCollection.deleteOne(query);
+            // const result1 = await reviewCollection.deleteOne(query1);
             res.send(result)
         })
 
@@ -234,11 +241,11 @@ async function run() {
             const result = await trainerCollection.insertOne(userInfo);
             res.send(result)
         })
+
         app.patch('/add-slot', async (req, res) => {
             const { email, selectClass, slotName, slotTime } = req.body;
 
             const query = { email };
-
             const update = {};
             if (selectClass) {
                 const selectClassArray = Array.isArray(selectClass) ? selectClass : [selectClass];
@@ -258,8 +265,12 @@ async function run() {
             if (slotTime !== undefined) {
                 update.$inc = { slotTime };
             }
+            if (slotTime !== undefined) {
+                update.$inc = { availableTime: -slotTime };
+            }
 
             const result = await trainerCollection.updateOne(query, update, { upsert: true });
+
             res.send(result)
 
 
@@ -282,6 +293,7 @@ async function run() {
             const result = await trainerCollection.findOne(filter);
             res.send(result);
         })
+
         app.delete('/trainer/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -324,7 +336,7 @@ async function run() {
 
         app.get('/payment', async (req, res) => {
 
-            const result = await paymentCollection.find().toArray();
+            const result = await paymentCollection.find().sort({ _id: -1 }).limit(6).toArray();
             const result1 = await paymentCollection.aggregate([
                 {
                     $group: {
@@ -337,6 +349,13 @@ async function run() {
             // console.log("Total Price:", result1[0]?.totalPrice || 0);
 
             res.send({ result, result1 })
+        })
+
+        app.get('/payment/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { userEmail: email };
+            const result = await paymentCollection.find(query).toArray();
+            res.send(result);
         })
 
         // forumCollection
@@ -354,6 +373,41 @@ async function run() {
             const result = await forumCollection.find().limit(6).toArray();
             res.send(result)
         })
+
+
+        // app.patch('/forum-update/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const { like } = req.body;
+        //     const query = { _id: new ObjectId(id) };
+        //     const forum = await forumCollection.findOne(query);
+        //     console.log(forum.vote);
+        //     let update = {};
+        //     if (like === true && forum.vote === false) {
+        //         update = {
+        //             $inc: { upVote: 1 },
+        //             $set: { vote: true }
+        //         }
+        //     }
+        //     else if (like === true && forum.vote === true) {
+        //         update = {
+        //             $inc: { upVote: -1 },
+        //             $set: { vote: false }
+        //         }
+        //     } else if (like === false && forum.vote === true) {
+        //         update = {
+        //             $inc: { upVote: -1 },
+        //             $set: { vote: false }
+        //         }
+        //     }
+        //     else {
+        //         update = {
+        //             // $inc: { upVote: -1 },
+        //             $set: { vote: false }
+        //         }
+        //     }
+        //     const result = await forumCollection.updateOne(query, update)
+        //     res.send(result)
+        // })
 
         app.patch('/forum-update/:id', async (req, res) => {
             const id = req.params.id;
@@ -373,6 +427,10 @@ async function run() {
             const result = await forumCollection.updateOne(query, update)
             res.send(result)
         })
+
+
+
+
 
         app.get('/forum-details/:id', async (req, res) => {
             const id = req.params.id;
@@ -408,6 +466,32 @@ async function run() {
             const result = await reviewCollection.findOne(filter);
             res.send(result);
         })
+
+        app.patch('/slot-delete', async (req, res) => {
+            const info = req.body;
+            const query = { _id: new ObjectId(info._id) };
+            const user = await trainerCollection.findOne(query);
+            const updateSlotName = user.slotName.filter(slot => slot != info.value)
+            const updateDoc = {
+                $set: {
+                    slotName: updateSlotName
+                }
+            }
+            const result = await trainerCollection.updateOne(query, updateDoc);
+            res.send(result)
+        })
+
+        app.post('/testimonial', async (req, res) => {
+            const info = req.body;
+            const result = await testimonialCollection.insertOne(info);
+            res.send(result)
+        })
+
+        app.get('/testimonials', async (req, res) => {
+            const result = await testimonialCollection.find().toArray();
+            res.send(result);
+        })
+
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
         // console.log("Pinged your deployment. You successfully connected to MongoDB!");
