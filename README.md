@@ -1,4 +1,3 @@
-<!--
 # Body Build House - Backend
 
 This is the backend server for the **Body Build House** web application. It is built using **Node.js**, **Express.js**, and **MongoDB**, and supports **JWT-based authentication** with role-based access. The system allows users to register, manage classes, trainers, payments, forums, reviews, and more. It also integrates **Stripe** for secure payment processing.
@@ -89,20 +88,20 @@ This is the backend server for the **Body Build House** web application. It is b
    ```
 
 ### API Endpoints
+
 Running the Server
 node index.js
-
 
 Or with nodemon for development:
 
 nodemon index.js
-
 
 Server will run on:
 
 http://localhost:5000
 
 API Endpoints
+
 ## - Authentication
 
 POST /jwt → Generate JWT token
@@ -192,6 +191,7 @@ GET /testimonials → Get all testimonials
 POST /subscribe → Add subscriber
 
 GET /subscribe → Get all subscribers
+
 ## 🧑‍💻 Authors
 
 - Shoriful Islam (Lead Developer)
